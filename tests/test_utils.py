@@ -1,5 +1,5 @@
 """Test utilities."""
-from util import (
+from mouse_trapi.util import (
     find_last, find_last_matching, plural_noun_phrase, plural_verb_phrase,
     singular_noun_cache, singular_verb_cache,
 )

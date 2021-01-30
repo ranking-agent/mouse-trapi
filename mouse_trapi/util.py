@@ -2,7 +2,7 @@
 from collections.abc import Callable
 from functools import wraps
 import re
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, TypeVar
 
 prepositions = [
     "to",
@@ -28,7 +28,10 @@ class CURIETriple(NamedTuple):
     object: str
 
 
-def find_last(list_: List[str], element: str) -> int:
+T = TypeVar('T')
+
+
+def find_last(list_: List[T], element: T) -> int:
     """Find index of last occurrence of element in list."""
     return next(
         idx

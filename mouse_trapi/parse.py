@@ -1,15 +1,18 @@
 """Parse question into query graph."""
 import json
+import os
+from pathlib import Path
 import re
 
 import bmt
 import httpx
 
-from util import *
+from .util import *
 
 toolkit = bmt.Toolkit()
 
-with open("biolink_grammar_fixes.json", "r") as stream:
+dir_path = Path(__file__).parent
+with open(dir_path / "biolink_grammar_fixes.json", "r") as stream:
     biolink_to_grammatical = json.load(stream)
 grammatical_to_biolink = {
     value: key

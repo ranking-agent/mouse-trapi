@@ -1,5 +1,5 @@
 """Test encoder."""
-from encode import encode, pascalcase_to_sentencecase, snakecase_to_sentencecase
+from mouse_trapi.encode import encode, pascalcase_to_sentencecase, snakecase_to_sentencecase
 
 
 def test_convert_casing():

@@ -3,7 +3,7 @@ import re
 
 import httpx
 
-from util import Triple, CURIETriple
+from .util import Triple, CURIETriple
 
 
 def pascalcase_to_sentencecase(string: str) -> str:

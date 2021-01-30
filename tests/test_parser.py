@@ -1,5 +1,5 @@
 """Test parser."""
-from parse import parse_question, preprocess, format
+from mouse_trapi.parse import parse_question, preprocess, format
 
 
 def test_preprocess():
