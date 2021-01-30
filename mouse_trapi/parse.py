@@ -35,7 +35,7 @@ predicates += [
     for predicate in predicates
 ]
 
-exp_0 = r"(((tell( me)? )?(what|which))|find( for( me)?)?)"
+exp_0 = r"(((tell( me)? )?(what|which))|find(( for)? me)?)"
 exp_subject_category = "|".join(categories)
 exp_1 = r"( that)?"
 exp_predicate = "|".join(predicates)
