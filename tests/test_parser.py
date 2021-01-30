@@ -10,6 +10,23 @@ def test_preprocess():
 
 def test_basic():
     """Test basic questions."""
+    assert parse_question("Tell me which drug treats type 2 diabetes.") == {
+        "nodes": {
+            "drug": {
+                "category": "biolink:Drug"
+            },
+            "type 2 diabetes": {
+                "id": "HP:0005978"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "drug",
+                "predicate": "biolink:treats",
+                "object": "type 2 diabetes"
+            }
+        }
+    }
     assert parse_question("What drug treats type 2 diabetes?") == {
         "nodes": {
             "drug": {
