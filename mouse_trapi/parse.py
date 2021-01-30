@@ -48,6 +48,10 @@ exp = (
 re_obj = re.compile(exp)
 
 
+class ParseError(Exception):
+    """Parse error."""
+
+
 def fix_predicate(predicate):
     """Convert predicate to biolink form."""
     predicate = singular_verb_cache.get(predicate, predicate)
@@ -89,7 +93,7 @@ def sentence_to_triple(question: str) -> Triple:
     question = preprocess(question)
     match = re_obj.fullmatch(question)
     if match is None:
-        raise RuntimeError("Failed to parse")
+        raise ParseError("Failed to parse")
     predicate = fix_predicate(match.group("predicate"))
     subject_category = fix_category(match.group("subject_category"))
     object_name = match.group("object_name")
@@ -118,7 +122,7 @@ def object_name_to_curie(object_name):
         params={"string": object_name, "limit":10},
     )
     if not response:
-        raise RuntimeError(f"Unrecognized thing '{object_name}'")
+        raise ParseError(f"Unrecognized thing '{object_name}'")
     return next(iter(response.json()))
 
 
