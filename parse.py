@@ -81,7 +81,7 @@ def preprocess(question):
     return " ".join(words)
 
 
-def parse_question(question):
+def sentence_to_triple(question: str) -> Triple:
     """Parse natural-language question."""
     question = preprocess(question)
     match = re_obj.fullmatch(question)
@@ -90,27 +90,77 @@ def parse_question(question):
     predicate = fix_predicate(match.group("predicate"))
     subject_category = fix_category(match.group("subject_category"))
     object_name = match.group("object_name")
+    return Triple(subject_category, predicate, object_name)
+
+
+def sentence_to_curie_triple(question):
+    """Convert sentence to CURIE triple."""
+    return triple_to_curie_triple(sentence_to_triple(question))
+
+
+def category_to_curie(category):
+    """Convert category to CURIE."""
+    return format(category)
+
+
+def predicate_to_curie(predicate):
+    """Convert predicate to CURIE."""
+    return format(predicate)
+
+
+def object_name_to_curie(object_name):
+    """Convert object name to CURIE."""
     response = httpx.post(
         "http://robokop.renci.org:2433/lookup",
         params={"string": object_name, "limit":10},
     )
     if not response:
         raise RuntimeError(f"Unrecognized thing '{object_name}'")
-    object_id = next(iter(response.json()))
+    return next(iter(response.json()))
+
+
+def triple_to_curie_triple(triple: Triple) -> CURIETriple:
+    """Convert triple to CURIE triple."""
+    return CURIETriple(
+        category_to_curie(triple.subject_category),
+        predicate_to_curie(triple.predicate),
+        object_name_to_curie(triple.object),
+    )
+
+
+def curie_triple_to_qgraph(
+        curie_triple: CURIETriple,
+        subject_key="n0",
+        object_key="n1",
+        edge_key="e01",
+):
+    """Convert CURIE triple to query graph."""
     return {
         "nodes": {
-            subject_category: {
-                "category": format(subject_category)
+            subject_key: {
+                "category": curie_triple.subject_category
             },
-            object_name: {
-                "id": object_id,
+            object_key: {
+                "id": curie_triple.object,
             }
         },
         "edges": {
-            predicate: {
-                "subject": subject_category,
-                "predicate": format(predicate),
-                "object": object_name
+            edge_key: {
+                "subject": subject_key,
+                "predicate": curie_triple.predicate,
+                "object": object_key
             }
         }
     }
+
+
+def parse_question(question: str):
+    """Parse natural-language question."""
+    triple = sentence_to_triple(question)
+    curie_triple = triple_to_curie_triple(triple)
+    return curie_triple_to_qgraph(
+        curie_triple,
+        subject_key=triple.subject_category,
+        edge_key=triple.predicate,
+        object_key=triple.object,
+    )

@@ -1,6 +1,8 @@
 """Utilities."""
+from collections.abc import Callable
 from functools import wraps
 import re
+from typing import Dict, List, NamedTuple
 
 prepositions = [
     "to",
@@ -14,7 +16,19 @@ prepositions = [
 preposition_pattern = "|".join(prepositions)
 
 
-def find_last(list_, element):
+class Triple(NamedTuple):
+    subject_category: str
+    predicate: str
+    object: str
+
+
+class CURIETriple(NamedTuple):
+    subject_category: str
+    predicate: str
+    object: str
+
+
+def find_last(list_: List[str], element: str) -> int:
     """Find index of last occurrence of element in list."""
     return next(
         idx
@@ -23,7 +37,7 @@ def find_last(list_, element):
     )
 
 
-def find_last_matching(list_, pattern):
+def find_last_matching(list_: List[str], pattern: str) -> int:
     """Find index of last occurrence of list matching pattern."""
     return next(
         idx
@@ -32,8 +46,8 @@ def find_last_matching(list_, pattern):
     )
 
 
-def inverter(cache):
-    def decorator(fcn):
+def inverter(cache: Dict[str, str]) -> Callable:
+    def decorator(fcn) -> Callable:
         @wraps(fcn)
         def wrapper(input):
             """Wrapper."""
@@ -48,7 +62,7 @@ singular_noun_cache = dict()
 
 
 @inverter(singular_noun_cache)
-def plural_noun_phrase(noun_phrase):
+def plural_noun_phrase(noun_phrase: str) -> str:
     """Convert to plural."""
     if " of " in noun_phrase:
         subterms = noun_phrase.split(" of ", 1)
@@ -62,7 +76,7 @@ def plural_noun_phrase(noun_phrase):
     return noun_phrase + "s"
 
 
-def plural_verb(verb):
+def plural_verb(verb: str) -> str:
     """Convert to plural."""
     if verb == "is":
         return "are"
@@ -79,7 +93,7 @@ singular_verb_cache = dict()
 
 
 @inverter(singular_verb_cache)
-def plural_verb_phrase(verb_phrase):
+def plural_verb_phrase(verb_phrase: str) -> str:
     """Convert to plural."""
     words = verb_phrase.split(" ")
 
