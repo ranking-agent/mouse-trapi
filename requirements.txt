@@ -1,2 +1,4 @@
 bmt
+fastapi
 httpx
+uvicorn
