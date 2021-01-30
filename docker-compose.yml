@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  mouse_trapi:
+    image: mouse-trapi
+    build:
+      context: .
+    ports:
+      - '30653:30653'
