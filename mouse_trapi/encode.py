@@ -1,9 +1,10 @@
 """Encode query graph in English."""
 import re
+from typing import Union
 
 import httpx
 
-from .util import Triple, CURIETriple
+from .util import Triple, CURIETriple, Category, Name
 
 
 def pascalcase_to_sentencecase(string: str) -> str:
@@ -22,24 +23,35 @@ def snakecase_to_sentencecase(string: str) ->  str:
 
 def english_triple_to_sentence(triple: Triple) -> str:
     """Convert triple to sentence."""
-    return f"What {triple.subject_category} {triple.predicate} {triple.object}?"
+    if isinstance(triple.subject, Category):
+        return f"What {triple.subject} {triple.predicate} {triple.object}?"
+    else:
+        return f"{triple.subject} {triple.predicate} what {triple.object}?"
+
+
+def sobject_curie_to_name(sobject: Union[Category, Name]) -> Union[Category, Name]:
+    """Convert subject or object CURIE to name."""
+    if isinstance(sobject, Category):
+        return Category(pascalcase_to_sentencecase(
+            sobject.split(":")[1]
+        ))
+    else:
+        response = httpx.get(
+            "https://nodenormalization-sri.renci.org/get_normalized_nodes",
+            params={"curie": sobject},
+        )
+        response.raise_for_status()
+        return Name(response.json()[sobject]["id"]["label"])
 
 
 def curie_triple_to_sentence(curie_triple: CURIETriple) -> str:
     """Convert CURIE triple to sentence."""
-    subject_category = pascalcase_to_sentencecase(
-        curie_triple.subject_category.split(":")[1]
-    )
+    subject = sobject_curie_to_name(curie_triple.subject)
+    object = sobject_curie_to_name(curie_triple.object)
     predicate = snakecase_to_sentencecase(
         curie_triple.predicate.split(":")[1]
     )
-    response = httpx.get(
-        "https://nodenormalization-sri.renci.org/get_normalized_nodes",
-        params={"curie": curie_triple.object},
-    )
-    response.raise_for_status()
-    object_name = response.json()[curie_triple.object]["id"]["label"]
-    triple = Triple(subject_category, predicate, object_name)
+    triple = Triple(subject, predicate, object)
     return english_triple_to_sentence(triple)
 
 
@@ -48,17 +60,23 @@ def encode(qgraph) -> str:
     assert len(qgraph["nodes"]) == 2
     assert len(qgraph["edges"]) == 1
     edge = next(iter(qgraph["edges"].values()))
-    assert edge.get("predicate", None) is not None
     subject_qnode = qgraph["nodes"][edge["subject"]]
-    assert (
-        subject_qnode.get("category", None) is not None
-        and subject_qnode.get("id", None) is None
-    )
     object_qnode = qgraph["nodes"][edge["object"]]
-    assert object_qnode.get("id", None) is not None
-    object_id = object_qnode["id"]
-    return curie_triple_to_sentence(CURIETriple(
-        subject_qnode["category"],
-        edge["predicate"],
-        object_id,
-    ))
+    if subject_qnode.get("id", None) is None:
+        assert object_qnode.get("id", None) is not None
+        subject_category = subject_qnode.get("category", "biolink:NamedThing")
+        object_id = object_qnode["id"]
+        return curie_triple_to_sentence(CURIETriple(
+            Category(subject_category),
+            edge.get("predicate", "biolink:related_to"),
+            Name(object_id),
+        ))
+    else:
+        assert object_qnode.get("id", None) is None
+        subject_id = subject_qnode["id"]
+        object_category = object_qnode.get("category", "biolink:NamedThing")
+        return curie_triple_to_sentence(CURIETriple(
+            Name(subject_id),
+            edge.get("predicate", "biolink:related_to"),
+            Category(object_category),
+        ))

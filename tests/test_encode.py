@@ -27,3 +27,19 @@ def test_encode():
             }
         }
     }) == "What drug treats type 2 diabetes mellitus?"
+    encode({
+        "nodes": {
+            "disease": {
+                "category": "biolink:Disease"
+            },
+            "albuterol": {
+                "id": "CHEBI:2549"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "albuterol",
+                "object": "disease"
+            }
+        }
+    }) == "Albuterol is related to what diseases?"
