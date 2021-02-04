@@ -1,6 +1,5 @@
 """Parse question into query graph."""
 import json
-import os
 from pathlib import Path
 import re
 
