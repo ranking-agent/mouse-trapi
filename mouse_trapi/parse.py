@@ -42,26 +42,26 @@ predicates += [
     for predicate in predicates
 ]
 
-exp_0 = r"(((tell( me)? )?(what|which))|find(( for)? me)?)"
+what = r"(what|which)"
+find = rf"(((tell( me)? )?{what})|find(( for)? me)?)"
 exp_category = "|".join(categories)
-exp_1 = r"( that)?"
+that = r"( that)?"
 exp_predicate = "|".join(predicates)
-exp_2 = r"(what|which)"
-exp_3 = r"( do(es))?"
+does = r"( do(es))?"
 exp_name = r".*"
 
 expressions = [
     (
-        f"{exp_0} (?P<subject_category>{exp_category}){exp_1} "
+        f"{find} (?P<subject_category>{exp_category}){that} "
         f"(?P<predicate>{exp_predicate}) (?P<object_name>{exp_name})"
     ),  # What drugs treat asthma?
     (
-        f"{exp_0} (?P<object_category>{exp_category}){exp_1}{exp_3} "
+        f"{find} (?P<object_category>{exp_category}){that}{does} "
         f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate})"
     ),  # What disease does albuterol treat? Find me diseases that albuterol treats.
     (
         f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate}) "
-        f"{exp_2} (?P<object_category>{exp_category})"
+        f"{what} (?P<object_category>{exp_category})"
     ),  # Asthma is treated by what drugs?
 ]
 re_objs = [re.compile(exp) for exp in expressions]
