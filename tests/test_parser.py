@@ -8,6 +8,61 @@ def test_preprocess():
     assert preprocess("Can I   have  a bag, please?") == "can i have bag"
 
 
+def test_no_category():
+    """Test no-category questions."""
+    assert parse_question("What treats asthma?") == {
+        "nodes": {
+            "named thing": {
+                "category": "biolink:NamedThing"
+            },
+            "asthma": {
+                "id": "HP:0002099"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "named thing",
+                "predicate": "biolink:treats",
+                "object": "asthma",
+            }
+        }
+    }
+    assert parse_question("What does albuterol treat?") == {
+        "nodes": {
+            "named thing": {
+                "category": "biolink:NamedThing"
+            },
+            "albuterol": {
+                "id": "CHEBI:2549"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "albuterol",
+                "predicate": "biolink:treats",
+                "object": "named thing",
+            }
+        }
+    }
+    assert parse_question("Albuterol treats what?") == {
+        "nodes": {
+            "named thing": {
+                "category": "biolink:NamedThing"
+            },
+            "albuterol": {
+                "id": "CHEBI:2549"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "albuterol",
+                "predicate": "biolink:treats",
+                "object": "named thing",
+            }
+        }
+    }
+
+
 def test_what_does_form():
     """Test "what does" form."""
     assert parse_question("What disease does albuterol treat?") == {
