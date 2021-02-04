@@ -43,16 +43,23 @@ predicates += [
 ]
 
 exp_0 = r"(((tell( me)? )?(what|which))|find(( for)? me)?)"
-exp_subject_category = "|".join(categories)
+exp_category = "|".join(categories)
 exp_1 = r"( that)?"
 exp_predicate = "|".join(predicates)
-exp_object_name = r".*"
+exp_2 = r"(what|which)"
+exp_name = r".*"
 
-exp = (
-    f"{exp_0} (?P<subject_category>{exp_subject_category}){exp_1} "
-    f"(?P<predicate>{exp_predicate}) (?P<object_name>{exp_object_name})"
-)
-re_obj = re.compile(exp)
+expressions = [
+    (
+        f"{exp_0} (?P<subject_category>{exp_category}){exp_1} "
+        f"(?P<predicate>{exp_predicate}) (?P<object_name>{exp_name})"
+    ),
+    (
+        f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate}) "
+        f"{exp_2} (?P<object_category>{exp_category})"
+    ),
+]
+re_objs = [re.compile(exp) for exp in expressions]
 
 
 class ParseError(Exception):
@@ -100,13 +107,24 @@ def preprocess(question):
 def sentence_to_triple(question: str) -> Triple:
     """Parse natural-language question."""
     question = preprocess(question)
-    match = re_obj.fullmatch(question)
-    if match is None:
+    for re_obj in re_objs:
+        match = re_obj.fullmatch(question)
+        if match is not None:
+            break
+    else:
         raise ParseError("Failed to parse")
-    predicate = fix_predicate(match.group("predicate"))
-    subject_category = fix_category(match.group("subject_category"))
-    object_name = match.group("object_name")
-    return Triple(subject_category, predicate, object_name)
+    elements = match.groupdict()
+    if "subject_category" in elements:
+        predicate = fix_predicate(elements["predicate"])
+        subject = Category(fix_category(elements["subject_category"]))
+        object = Name(elements["object_name"])
+    elif "object_category" in elements:
+        predicate = fix_predicate(elements["predicate"])
+        object = Category(fix_category(elements["object_category"]))
+        subject = Name(elements["subject_name"])
+    else:
+        raise RuntimeError("subject_category or object_category must be present")
+    return Triple(subject, predicate, object)
 
 
 def sentence_to_curie_triple(question):
@@ -114,34 +132,54 @@ def sentence_to_curie_triple(question):
     return triple_to_curie_triple(sentence_to_triple(question))
 
 
-def category_to_curie(category):
+def category_to_curie(category: Category) -> Category:
     """Convert category to CURIE."""
-    return format(category)
+    return Category(format(category))
 
 
-def predicate_to_curie(predicate):
+def predicate_to_curie(predicate: str) -> str:
     """Convert predicate to CURIE."""
     return format(predicate)
 
 
-def object_name_to_curie(object_name):
-    """Convert object name to CURIE."""
+def name_to_curie(name: Name) -> Name:
+    """Convert name to CURIE."""
     response = httpx.post(
         "http://robokop.renci.org:2433/lookup",
-        params={"string": object_name, "limit":10},
+        params={"string": name, "limit":10},
     )
     if not response:
-        raise ParseError(f"Unrecognized thing '{object_name}'")
-    return next(iter(response.json()))
+        raise ParseError(f"Unrecognized thing '{name}'")
+    return Name(next(iter(response.json())))
+
+
+def sobject_to_curie(sobject: Union[Category, Name]) -> Union[Category, Name]:
+    """Convert subject or object to CURIE."""
+    if isinstance(sobject, Category):
+        return category_to_curie(sobject) 
+    else:
+        return name_to_curie(sobject)
 
 
 def triple_to_curie_triple(triple: Triple) -> CURIETriple:
     """Convert triple to CURIE triple."""
     return CURIETriple(
-        category_to_curie(triple.subject_category),
+        sobject_to_curie(triple.subject),
         predicate_to_curie(triple.predicate),
-        object_name_to_curie(triple.object),
+        sobject_to_curie(triple.object),
     )
+
+
+def sobject_to_qnode(sobject: Union[Category, Name]) -> Dict:
+    """Convert subject or object to qnode."""
+    if isinstance(sobject, Category):
+        return {
+            "category": sobject
+        } 
+    else:
+        return {
+            "id": sobject
+        }
 
 
 def curie_triple_to_qgraph(
@@ -153,12 +191,8 @@ def curie_triple_to_qgraph(
     """Convert CURIE triple to query graph."""
     return {
         "nodes": {
-            subject_key: {
-                "category": curie_triple.subject_category
-            },
-            object_key: {
-                "id": curie_triple.object,
-            }
+            subject_key: sobject_to_qnode(curie_triple.subject),
+            object_key: sobject_to_qnode(curie_triple.object),
         },
         "edges": {
             edge_key: {
@@ -176,7 +210,7 @@ def parse_question(question: str):
     curie_triple = triple_to_curie_triple(triple)
     return curie_triple_to_qgraph(
         curie_triple,
-        subject_key=triple.subject_category,
+        subject_key=triple.subject,
         edge_key=triple.predicate,
         object_key=triple.object,
     )

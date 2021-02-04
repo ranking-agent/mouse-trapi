@@ -2,7 +2,7 @@
 from collections.abc import Callable
 from functools import wraps
 import re
-from typing import Dict, List, NamedTuple, TypeVar
+from typing import Dict, List, NamedTuple, TypeVar, Union
 
 prepositions = [
     "to",
@@ -16,16 +16,24 @@ prepositions = [
 preposition_pattern = "|".join(prepositions)
 
 
+class Category(str):
+    """Node category."""
+
+
+class Name(str):
+    """Node name."""
+
+
 class Triple(NamedTuple):
-    subject_category: str
+    subject: Union[Category, Name]
     predicate: str
-    object: str
+    object: Union[Category, Name]
 
 
 class CURIETriple(NamedTuple):
-    subject_category: str
+    subject: Union[Category, Name]
     predicate: str
-    object: str
+    object: Union[Category, Name]
 
 
 T = TypeVar('T')
