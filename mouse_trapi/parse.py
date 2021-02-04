@@ -47,17 +47,22 @@ exp_category = "|".join(categories)
 exp_1 = r"( that)?"
 exp_predicate = "|".join(predicates)
 exp_2 = r"(what|which)"
+exp_3 = r"( do(es))?"
 exp_name = r".*"
 
 expressions = [
     (
         f"{exp_0} (?P<subject_category>{exp_category}){exp_1} "
         f"(?P<predicate>{exp_predicate}) (?P<object_name>{exp_name})"
-    ),
+    ),  # What drugs treat asthma?
+    (
+        f"{exp_0} (?P<object_category>{exp_category}){exp_1}{exp_3} "
+        f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate})"
+    ),  # What disease does albuterol treat? Find me diseases that albuterol treats.
     (
         f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate}) "
         f"{exp_2} (?P<object_category>{exp_category})"
-    ),
+    ),  # Asthma is treated by what drugs?
 ]
 re_objs = [re.compile(exp) for exp in expressions]
 
