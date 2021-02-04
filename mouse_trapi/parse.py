@@ -47,21 +47,21 @@ find = rf"(((tell( me)? )?{what})|find(( for)? me)?)"
 exp_category = "|".join(categories)
 that = r"( that)?"
 exp_predicate = "|".join(predicates)
-does = r"( do(es))?"
+does = r"(do(es) )?"
 exp_name = r".*"
 
 expressions = [
     (
-        f"{find} (?P<subject_category>{exp_category}){that} "
+        f"{find} ((?P<subject_category>{exp_category}){that} )?"
         f"(?P<predicate>{exp_predicate}) (?P<object_name>{exp_name})"
     ),  # What drugs treat asthma?
     (
-        f"{find} (?P<object_category>{exp_category}){that}{does} "
+        f"{find} ((?P<object_category>{exp_category}){that} )?{does}"
         f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate})"
     ),  # What disease does albuterol treat? Find me diseases that albuterol treats.
     (
         f"(?P<subject_name>{exp_name}) (?P<predicate>{exp_predicate}) "
-        f"{what} (?P<object_category>{exp_category})"
+        f"{what}( (?P<object_category>{exp_category}))?"
     ),  # Asthma is treated by what drugs?
 ]
 re_objs = [re.compile(exp) for exp in expressions]
@@ -119,13 +119,13 @@ def sentence_to_triple(question: str) -> Triple:
     else:
         raise ParseError("Failed to parse")
     elements = match.groupdict()
-    if "subject_category" in elements:
+    if "object_name" in elements:
         predicate = fix_predicate(elements["predicate"])
-        subject = Category(fix_category(elements["subject_category"]))
+        subject = Category(fix_category(elements["subject_category"] or "named thing"))
         object = Name(elements["object_name"])
-    elif "object_category" in elements:
+    elif "subject_name" in elements:
         predicate = fix_predicate(elements["predicate"])
-        object = Category(fix_category(elements["object_category"]))
+        object = Category(fix_category(elements["object_category"] or "named thing"))
         subject = Name(elements["subject_name"])
     else:
         raise RuntimeError("subject_category or object_category must be present")
