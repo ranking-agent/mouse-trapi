@@ -8,6 +8,27 @@ def test_preprocess():
     assert preprocess("Can I   have  a bag, please?") == "can i have bag"
 
 
+def test_by_which_form():
+    """Test "by which" form."""
+    assert parse_question("Asthma is treated by which chemical substance?") == {
+        "nodes": {
+            "chemical substance": {
+                "category": "biolink:ChemicalSubstance"
+            },
+            "asthma": {
+                "id": "HP:0002099"
+            }
+        },
+        "edges": {
+            "treated by": {
+                "subject": "asthma",
+                "predicate": "biolink:treated_by",
+                "object": "chemical substance",
+            }
+        }
+    }
+
+
 def test_category_synonym():
     """Test category synonyms."""
     assert parse_question("What chemical treats asthma?") == {
