@@ -8,6 +8,44 @@ def test_preprocess():
     assert preprocess("Can I   have  a bag, please?") == "can i have bag"
 
 
+def test_what_does_form():
+    """Test "what does" form."""
+    assert parse_question("What disease does albuterol treat?") == {
+        "nodes": {
+            "disease": {
+                "category": "biolink:Disease"
+            },
+            "albuterol": {
+                "id": "CHEBI:2549"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "albuterol",
+                "predicate": "biolink:treats",
+                "object": "disease",
+            }
+        }
+    }
+    assert parse_question("Find me diseases that albuterol treats.") == {
+        "nodes": {
+            "disease": {
+                "category": "biolink:Disease"
+            },
+            "albuterol": {
+                "id": "CHEBI:2549"
+            }
+        },
+        "edges": {
+            "treats": {
+                "subject": "albuterol",
+                "predicate": "biolink:treats",
+                "object": "disease",
+            }
+        }
+    }
+
+
 def test_by_which_form():
     """Test "by which" form."""
     assert parse_question("Asthma is treated by which chemical substance?") == {
