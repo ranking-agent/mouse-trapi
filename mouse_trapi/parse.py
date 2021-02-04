@@ -13,12 +13,20 @@ toolkit = bmt.Toolkit()
 dir_path = Path(__file__).parent
 with open(dir_path / "biolink_grammar_fixes.json", "r") as stream:
     biolink_to_grammatical = json.load(stream)
+with open(dir_path / "category_synonyms.json", "r") as stream:
+    category_synonyms = json.load(stream)
 grammatical_to_biolink = {
     value: key
     for key, value in biolink_to_grammatical.items()
 }
+synonym_to_category = {
+    synonym: category
+    for category, synonyms in category_synonyms.items()
+    for synonym in synonyms
+}
 
 categories = toolkit.get_descendants("biological entity")
+categories += list(synonym_to_category.keys())
 categories += [
     plural_noun_phrase(category)
     for category in categories
@@ -60,7 +68,9 @@ def fix_predicate(predicate):
 
 def fix_category(category):
     """Convert category to biolink form."""
-    return singular_noun_cache.get(category, category)
+    category = singular_noun_cache.get(category, category)
+    category = synonym_to_category.get(category, category)
+    return category
 
 
 def format(string):
